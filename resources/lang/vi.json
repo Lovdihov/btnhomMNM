@@ -1,0 +1,15 @@
+{
+    "Name" : "Họ tên",
+    "Email" : "Email",
+    "Password" : "Mật khẩu",
+    "Confirm Password" : "Xác nhận lại mật khẩu",
+    "The email has already been taken" : "Email đã đăng ký",
+    "Already registered?":"Bạn đã có tài khoản",
+    "Register":"Đăng ký",
+    "Remember me":"Nhớ mật khẩu",
+    "Log in":"Đăng nhập",
+    "Forgot your password?":"Quên mật khẩu?",
+    "Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.": "Quên mật khẩu? Không vấn đề gì. Hãy cho chúng tôi biết địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu qua email để bạn có thể chọn mật khẩu mới.",
+    "Email Password Reset Link": "Gửi liên kết đặt lại mật khẩu",
+    "These credentials do not match our records.": "Tài khoản hoặc mật khẩu không đúng."
+}
