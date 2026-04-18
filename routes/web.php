@@ -59,6 +59,31 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/alb_store', [AdminController::class, 'storeAlbum'])->name('albums.store');
     Route::get('/art_create', [AdminController::class, 'createArtist'])->name('artists.create');
         Route::post('/art_store', [AdminController::class, 'storeArtist'])->name('artists.store');
+    Route::get('/album_create', [AdminController::class, 'createAlbum'])->name('albums.create');
+    Route::get('/albums/create', [AdminController::class, 'createAlbum'])->name('albums.create');
 });
 
+
 require __DIR__.'/auth.php';
+
+
+
+// Đảm bảo không có route nào trùng tên phía trên
+Route::prefix('admin')->group(function () {
+    // Quản lý Bài hát
+    Route::get('/songs', [AdminController::class, 'songs'])->name('admin.songs');
+    Route::get('/songs/edit/{id}', [AdminController::class, 'editSong'])->name('admin.songs.edit');
+    Route::put('/songs/update/{id}', [AdminController::class, 'updateSong'])->name('admin.songs.update');
+
+
+    // Quản lý Album
+    Route::get('/albums', [AdminController::class, 'albums'])->name('admin.albums');
+    Route::get('/albums/edit/{id}', [AdminController::class, 'editAlbum'])->name('admin.albums.edit');
+    Route::put('/albums/update/{id}', [AdminController::class, 'updateAlbum'])->name('admin.albums.update');
+    
+    // Quản lý Nghệ sĩ
+    Route::get('/artists', [AdminController::class, 'artists'])->name('admin.artists');
+    Route::get('/artists/edit/{id}', [AdminController::class, 'editArtist'])->name('admin.artists.edit');
+    Route::put('/artists/update/{id}', [AdminController::class, 'updateArtist'])->name('admin.artists.update');
+    
+});
