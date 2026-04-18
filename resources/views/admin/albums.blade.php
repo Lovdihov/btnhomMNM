@@ -106,6 +106,7 @@
                     <th>Ngày tạo</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
+                    <th>Cập nhật</th>
                 </tr>
             </thead>
 
@@ -147,6 +148,13 @@
                                 {{ $album->status == 1 ? 'Xóa' : 'Khôi phục' }}
                             </button>
                         </form>
+                    </td>
+
+                    <td style="text-align:center;">
+                        <a href="{{ route('admin.albums.edit', $album->id) }}" class="btn-custom" 
+                        style="background-color: #ffc107; color: #000; text-decoration: none; display: inline-block;">
+                            Sửa
+                        </a>
                     </td>
                 </tr>
                 @endforeach

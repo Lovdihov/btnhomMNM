@@ -63,6 +63,17 @@
             background-color: #343a40;
             color: white;
         }
+
+        .btn-edit {
+        background-color: #ffc107;
+        color: #212529;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-edit:hover {
+        background-color: #e0a800;
+    }
+
     </style>
 
     <script>
@@ -106,6 +117,7 @@
                     <th>Ngày tạo</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
+                    <th>Cập nhật</th>
                 </tr>
             </thead>
 
@@ -147,6 +159,16 @@
                             </button>
                         </form>
                     </td>
+
+                    <td style="text-align:center; display: flex; gap: 5px; justify-content: center;">
+                        <a href="{{ route('admin.songs.edit', $song->id) }}" class="btn-custom" style="background-color: #ffc107; color: black; text-decoration: none;">Sửa</a>
+                        <form method="POST" action="{{ route('admin.songs.delete', $song->id) }}" onsubmit="return confirm('Bạn có chắc muốn thao tác?')">
+                        
+                            
+                        </form>
+                    </td>
+                  
+
                 </tr>
                 @endforeach
             </tbody>
