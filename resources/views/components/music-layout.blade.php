@@ -31,8 +31,7 @@
                     </div>
 
                     <div id="search-results" class="absolute top-full mt-2 w-[150%] left-0 bg-[#1e2038] border border-gray-700 rounded-xl shadow-2xl hidden max-h-[80vh] overflow-y-auto">
-                        <div id="search-content" class="p-4">
-                            </div>
+                        <div id="search-content" class="p-4"></div>
                     </div>
                 </div>
             </div>
@@ -76,9 +75,12 @@
                         </x-slot>
                     </x-dropdown>
                 @else
-                    <a href="{{ route('login') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-purple-500/30 flex items-center gap-2 whitespace-nowrap">
-                        Đăng nhập
-                    </a>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ route('register') }}" class="text-sm font-bold text-gray-300 hover:text-white transition">Đăng ký</a>
+                        <a href="{{ route('login') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-purple-500/30 flex items-center gap-2 whitespace-nowrap">
+                            Đăng nhập
+                        </a>
+                    </div>
                 @endauth
             </div>
             
@@ -104,21 +106,21 @@
 
         <div class="flex flex-col items-center w-1/3">
             <div class="flex items-center gap-6 mb-1">
-                <button class="text-gray-400 hover:text-white transition"><i class="fas fa-random"></i></button>
-                <button class="text-gray-400 hover:text-white transition"><i class="fas fa-step-backward"></i></button>
+                <button id="btn-random" class="text-gray-400 hover:text-white transition"><i class="fas fa-random"></i></button>
+                <button id="btn-prev" class="text-gray-400 hover:text-white transition"><i class="fas fa-step-backward"></i></button>
                 
                 <button id="btn-play-pause" class="bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 hover:bg-purple-400 transition shadow-lg shadow-purple-500/30">
                     <i class="fas fa-play ml-1"></i>
                 </button>
                 
-                <button class="text-gray-400 hover:text-white transition"><i class="fas fa-step-forward"></i></button>
-                <button class="text-gray-400 hover:text-white transition"><i class="fas fa-redo"></i></button>
+                <button id="btn-next" class="text-gray-400 hover:text-white transition"><i class="fas fa-step-forward"></i></button>
+                <button id="btn-repeat" class="text-gray-400 hover:text-white transition"><i class="fas fa-redo"></i></button>
             </div>
             
             <div class="w-full flex items-center gap-2">
                 <span id="player-current-time" class="text-[10px] text-gray-500 w-8 text-right">0:00</span>
                 <div id="progress-container" class="flex-1 h-1.5 bg-gray-700 rounded-full cursor-pointer relative group">
-                    <div id="player-progress" class="absolute top-0 left-0 h-full bg-purple-500 rounded-full w-0 group-hover:bg-purple-400 transition-all"></div>
+                    <div id="player-progress" class="absolute top-0 left-0 h-full bg-purple-500 rounded-full w-0 group-hover:bg-purple-400 transition-all pointer-events-none"></div>
                 </div>
                 <span id="player-duration" class="text-[10px] text-gray-500 w-8">0:00</span>
             </div>
@@ -126,9 +128,9 @@
 
         <div class="flex items-center justify-end gap-3 w-1/3">
             <button class="text-gray-400 hover:text-white transition"><i class="fas fa-list-ul"></i></button>
-            <i class="fas fa-volume-up text-gray-400 text-sm"></i>
-            <div class="w-24 h-1.5 bg-gray-700 rounded-full cursor-pointer">
-                <div class="h-full bg-white rounded-full w-[80%]"></div>
+            <i id="volume-icon" class="fas fa-volume-up text-gray-400 text-sm"></i>
+            <div id="volume-container" class="w-24 h-1.5 bg-gray-700 rounded-full cursor-pointer relative">
+                <div id="volume-progress" class="absolute top-0 left-0 h-full bg-white rounded-full w-[100%] pointer-events-none transition-all"></div>
             </div>
         </div>
     </div>
@@ -138,9 +140,7 @@
     @stack('scripts')
 
     <script>
-        // ✅ Khai báo csrfToken từ meta tag để dùng trong toàn bộ JS
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? null;
-
         const audio = document.getElementById('main-audio');
         const playBtn = document.getElementById('btn-play-pause');
         const progressBar = document.getElementById('player-progress');
@@ -150,74 +150,85 @@
         const coverImg = document.getElementById('player-cover');
         const favBtn = document.getElementById('player-favorite');
 
-        // Biến lưu ID bài hát đang phát
         let currentPlayingSongId = null;
+        let currentPlaylist = [];
+        let currentIndex = -1;
+        let isRandom = false;
+        let isRepeat = false;
 
-        // Phát nhạc
-        window.playSong = function(url, title, cover, artist, songId) {
+        // 1. PHÁT NHẠC CỐT LÕI
+        function corePlaySong(url, title, cover, artist, songId) {
+            if (!url || url === 'null') {
+                alert('Không tìm thấy nguồn nhạc!');
+                return;
+            }
+
             document.getElementById('player-title').innerText = title;
             document.getElementById('player-artist').innerText = artist;
-
             coverImg.src = cover || 'https://via.placeholder.com/50';
             coverImg.classList.remove('hidden');
-            favBtn.classList.remove('hidden');
+            
+            if (favBtn) {
+                favBtn.classList.remove('hidden');
+                favBtn.setAttribute('data-song-id', songId);
+                favBtn.onclick = function() { toggleFavorite(songId, this); };
+            }
 
-            favBtn.setAttribute('data-song-id', songId);
-            favBtn.onclick = function() {
-                toggleFavorite(songId, this);
-            };
-
-            // ✅ LƯU LỊCH SỬ NGHE NHẠC VÀO DATABASE
             if (songId && songId !== currentPlayingSongId && csrfToken) {
                 fetch(`/songs/${songId}/history`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                }).catch(err => console.error('Lỗi lưu lịch sử:', err));
-
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                }).catch(err => console.error(err));
                 currentPlayingSongId = songId;
             }
 
             audio.src = url;
-            audio.play();
-            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            audio.play().catch(e => console.log("Yêu cầu tương tác để phát nhạc"));
+            if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+
+        // 2. PHÁT NHẠC TỪ GIAO DIỆN
+        window.playSong = function(url, title, cover, artist, songId) {
+            try {
+                buildPlaylist();
+                currentIndex = currentPlaylist.findIndex(song => song.songId == songId);
+            } catch (e) { console.error(e); }
+            corePlaySong(url, title, cover, artist, songId);
         };
 
-        // Play / Pause
-        playBtn.addEventListener('click', () => {
-            if (!audio.src) return;
-            if (audio.paused) {
-                audio.play();
-                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            } else {
-                audio.pause();
-                playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-            }
-        });
+        // 3. ĐIỀU KHIỂN & TIẾN TRÌNH
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                if (!audio.src) return;
+                if (audio.paused) {
+                    audio.play();
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                } else {
+                    audio.pause();
+                    playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
+                }
+            });
+        }
 
-        // Cập nhật thanh tiến trình
         audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
+            if (audio.duration && progressBar) {
                 const progressPercent = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = `${progressPercent}%`;
-                currentTimeEl.innerText = formatTime(audio.currentTime);
+                if (currentTimeEl) currentTimeEl.innerText = formatTime(audio.currentTime);
             }
         });
 
-        // Hiển thị tổng thời gian
         audio.addEventListener('loadedmetadata', () => {
-            durationEl.innerText = formatTime(audio.duration);
+            if (durationEl) durationEl.innerText = formatTime(audio.duration);
         });
 
-        // Tua nhạc
-        progressContainer.addEventListener('click', (e) => {
-            if (!audio.src || !audio.duration) return;
-            const width = progressContainer.clientWidth;
-            const clickX = e.offsetX;
-            audio.currentTime = (clickX / width) * audio.duration;
-        });
+        if (progressContainer) {
+            progressContainer.addEventListener('click', (e) => {
+                if (!audio.src || !audio.duration) return;
+                const width = progressContainer.clientWidth;
+                audio.currentTime = (e.offsetX / width) * audio.duration;
+            });
+        }
 
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
@@ -226,60 +237,103 @@
             return `${min}:${sec < 10 ? '0' : ''}${sec}`;
         }
 
-        // Toggle yêu thích bài hát
+        // 4. CHỈNH ÂM LƯỢNG
+        const volumeContainer = document.getElementById('volume-container');
+        const volumeProgress = document.getElementById('volume-progress');
+        const volumeIcon = document.getElementById('volume-icon');
+
+        if (volumeContainer) {
+            audio.volume = 1;
+            const updateVolume = (e) => {
+                const rect = volumeContainer.getBoundingClientRect();
+                let newVolume = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); 
+                audio.volume = newVolume;
+                if (volumeProgress) volumeProgress.style.width = `${newVolume * 100}%`;
+                if (volumeIcon) {
+                    if (newVolume === 0) volumeIcon.className = 'fas fa-volume-mute text-gray-400 text-sm';
+                    else if (newVolume < 0.5) volumeIcon.className = 'fas fa-volume-down text-gray-400 text-sm';
+                    else volumeIcon.className = 'fas fa-volume-up text-gray-400 text-sm';
+                }
+            };
+
+            volumeContainer.addEventListener('mousedown', (e) => {
+                updateVolume(e); 
+                const move = (ev) => updateVolume(ev);
+                const stop = () => {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', stop);
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', stop);
+            });
+        }
+
+        // 5. PLAYLIST LOGIC
+        function buildPlaylist() {
+            currentPlaylist = [];
+            const elements = document.querySelectorAll('[onclick^="playSong"], [onclick*=" playSong"]');
+            elements.forEach(el => {
+                const match = el.getAttribute('onclick').match(/playSong\('([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)',\s*(\d+)\)/);
+                if (match) {
+                    const song = { url: match[1], title: match[2], cover: match[3], artist: match[4], songId: parseInt(match[5]) };
+                    if (!currentPlaylist.find(s => s.songId === song.songId)) currentPlaylist.push(song);
+                }
+            });
+        }
+
+        function playNextSong() {
+            if (currentPlaylist.length === 0) return;
+            if (isRandom) {
+                let r; do { r = Math.floor(Math.random() * currentPlaylist.length); } while (r === currentIndex && currentPlaylist.length > 1);
+                currentIndex = r;
+            } else { currentIndex = (currentIndex + 1) % currentPlaylist.length; }
+            const s = currentPlaylist[currentIndex];
+            if (s) corePlaySong(s.url, s.title, s.cover, s.artist, s.songId);
+        }
+
+        function playPrevSong() {
+            if (currentPlaylist.length === 0) return;
+            currentIndex = currentIndex - 1 < 0 ? currentPlaylist.length - 1 : currentIndex - 1;
+            const s = currentPlaylist[currentIndex];
+            if (s) corePlaySong(s.url, s.title, s.cover, s.artist, s.songId);
+        }
+
+        document.getElementById('btn-next')?.addEventListener('click', playNextSong);
+        document.getElementById('btn-prev')?.addEventListener('click', playPrevSong);
+        document.getElementById('btn-random')?.addEventListener('click', function() {
+            isRandom = !isRandom;
+            this.classList.toggle('text-purple-500', isRandom);
+            this.classList.toggle('text-gray-400', !isRandom);
+        });
+        document.getElementById('btn-repeat')?.addEventListener('click', function() {
+            isRepeat = !isRepeat;
+            this.classList.toggle('text-purple-500', isRepeat);
+            this.classList.toggle('text-gray-400', !isRepeat);
+        });
+
+        audio.addEventListener('ended', () => {
+            if (isRepeat) { audio.currentTime = 0; audio.play(); } else { playNextSong(); }
+        });
+
+        // 6. THẢ TIM & TÌM KIẾM
         window.toggleFavorite = function(songId, buttonElement) {
-            if (!csrfToken) return alert("Vui lòng đăng nhập để sử dụng tính năng này!");
+            if (!csrfToken) return alert("Vui lòng đăng nhập!");
             fetch(`/songs/${songId}/favorite`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
             })
-            .then(res => {
-                if (res.status === 401) { window.location.href = '/login'; return; }
-                return res.json();
-            })
+            .then(res => res.status === 401 ? (window.location.href = '/login') : res.json())
             .then(data => {
-                if (!data) return;
                 if (data.status === 'added') {
                     buttonElement.classList.add('text-pink-500');
-                    buttonElement.classList.remove('text-gray-300', 'text-gray-400', 'text-gray-500');
-                } else if (data.status === 'removed') {
+                    buttonElement.classList.remove('text-gray-400');
+                } else {
                     buttonElement.classList.remove('text-pink-500');
                     buttonElement.classList.add('text-gray-400');
                 }
-            })
-            .catch(err => console.error('toggleFavorite error:', err));
+            }).catch(err => console.error(err));
         };
 
-        // Toggle yêu thích nghệ sĩ
-        window.toggleFavoriteArtist = function(artistId, buttonElement) {
-            if (!csrfToken) return alert("Vui lòng đăng nhập để sử dụng tính năng này!");
-            fetch(`/artists/${artistId}/favorite`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
-            })
-            .then(res => {
-                if (res.status === 401) { window.location.href = '/login'; return; }
-                return res.json();
-            })
-            .then(data => {
-                if (!data) return;
-                const icon = buttonElement.querySelector('i');
-                if (data.status === 'added') {
-                    buttonElement.classList.add('text-pink-500', 'border-pink-500');
-                    buttonElement.classList.remove('text-gray-300', 'text-gray-400', 'text-gray-500', 'border-gray-600');
-                    if (icon) { icon.classList.remove('far'); icon.classList.add('fas'); }
-                } else if (data.status === 'removed') {
-                    buttonElement.classList.remove('text-pink-500', 'border-pink-500');
-                    buttonElement.classList.add('text-gray-400', 'border-gray-600');
-                    if (icon) { icon.classList.remove('fas'); icon.classList.add('far'); }
-                }
-            })
-            .catch(err => console.error('toggleFavoriteArtist error:', err));
-        };
-
-        // ==========================================
-        // CÁC HÀM TÌM KIẾM TRỰC TIẾP (LIVE SEARCH)
-        // ==========================================
         const searchInput = document.getElementById('global-search');
         const searchResults = document.getElementById('search-results');
         const searchContent = document.getElementById('search-content');
@@ -288,93 +342,35 @@
         if (searchInput) {
             searchInput.addEventListener('input', function() {
                 clearTimeout(searchTimeout);
-                const keyword = this.value.trim();
-
-                if (keyword.length === 0) {
-                    searchResults.classList.add('hidden');
-                    return;
-                }
-
+                const kw = this.value.trim();
+                if (kw.length === 0) { searchResults.classList.add('hidden'); return; }
                 searchTimeout = setTimeout(() => {
                     fetch('/tim-kiem', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken 
-                        },
-                        body: JSON.stringify({ keyword: keyword })
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ keyword: kw })
                     })
                     .then(res => res.json())
-                    .then(data => renderSearchResults(data, keyword))
+                    .then(data => renderSearchResults(data, kw))
                     .catch(err => console.error(err));
                 }, 500);
             });
-
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.classList.add('hidden');
-                }
+            document.addEventListener('click', e => {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.add('hidden');
             });
         }
 
         function renderSearchResults(data, keyword) {
             let html = '';
-            const hasSongs = data.songs && data.songs.length > 0;
-            const hasArtists = data.artists && data.artists.length > 0;
-            const hasAlbums = data.albums && data.albums.length > 0;
-
-            if (!hasSongs && !hasArtists && !hasAlbums) {
-                searchContent.innerHTML = `<div class="text-center text-gray-500 py-4">Không tìm thấy kết quả cho "${keyword}"</div>`;
-                searchResults.classList.remove('hidden');
-                return;
-            }
-
-            if (hasSongs) {
-                html += `<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bài hát</h4>`;
-                data.songs.forEach(song => {
-                    const safeTitle = song.title.replace(/'/g, "\\'");
-                    const artistNames = song.artists ? song.artists.map(a => a.name).join(', ').replace(/'/g, "\\'") : '';
-                    const cover = song.cover_url || 'https://via.placeholder.com/50';
-                    
-                    html += `
-                        <div onclick="playSong('${song.audio_url}', '${safeTitle}', '${cover}', '${artistNames}', ${song.id})" 
-                             class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer transition mb-1 group">
-                            <img src="${cover}" class="w-10 h-10 rounded object-cover shadow-md">
-                            <div class="flex-1 overflow-hidden">
-                                <div class="text-sm font-bold text-white truncate group-hover:text-purple-400">${song.title}</div>
-                                <div class="text-xs text-gray-400 truncate">${artistNames}</div>
-                            </div>
-                            <i class="fas fa-play text-purple-500 opacity-0 group-hover:opacity-100 transition"></i>
-                        </div>
-                    `;
+            if (data.songs?.length > 0) {
+                html += `<h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Bài hát</h4>`;
+                data.songs.forEach(s => {
+                    const t = s.title.replace(/'/g, "\\'");
+                    const a = s.artists ? s.artists.map(ar => ar.name).join(', ').replace(/'/g, "\\'") : '';
+                    html += `<div onclick="playSong('${s.audio_url}', '${t}', '${s.cover_url}', '${a}', ${s.id})" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${s.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${s.title}</div><div class="text-xs text-gray-400 truncate">${a}</div></div></div>`;
                 });
             }
-
-            if (hasArtists) {
-                html += `<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4">Nghệ sĩ</h4>`;
-                data.artists.forEach(artist => {
-                    html += `
-                        <a href="/artist/${artist.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg transition mb-1">
-                            <img src="${artist.avatar_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-full object-cover shadow-md">
-                            <div class="text-sm font-bold text-white truncate">${artist.name}</div>
-                        </a>
-                    `;
-                });
-            }
-
-            if (hasAlbums) {
-                html += `<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4">Album</h4>`;
-                data.albums.forEach(album => {
-                    html += `
-                        <a href="/album/${album.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg transition mb-1">
-                            <img src="${album.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover shadow-md">
-                            <div class="text-sm font-bold text-white truncate">${album.title}</div>
-                        </a>
-                    `;
-                });
-            }
-
-            searchContent.innerHTML = html;
+            searchContent.innerHTML = html || `<div class="text-center text-gray-500 py-4">Không tìm thấy "${keyword}"</div>`;
             searchResults.classList.remove('hidden');
         }
     </script>
