@@ -33,6 +33,17 @@
             background-color: #c82333;
         }
 
+        .btn-restore {
+            background-color: #17a2b8;
+            color: white;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .btn-restore:hover {
+            background-color: #138496;
+        }
+
         .badge-status {
             padding: 4px 10px;
             border-radius: 20px;
@@ -71,7 +82,19 @@
                 pageLength: 10,
                 order: [[3, 'desc']],
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/vi.json'
+                    lengthMenu: 'Hiển thị _MENU_ mục',
+                    search: 'Tìm kiếm:',
+                    info: 'Hiển thị _START_ đến _END_ trong tổng _TOTAL_ mục',
+                    infoEmpty: 'Hiển thị 0 đến 0 trong tổng 0 mục',
+                    infoFiltered: '(lọc từ _MAX_ mục)',
+                    zeroRecords: 'Không tìm thấy dữ liệu phù hợp',
+                    emptyTable: 'Không có dữ liệu',
+                    paginate: {
+                        first: 'Đầu',
+                        last: 'Cuối',
+                        next: 'Sau',
+                        previous: 'Trước'
+                    }
                 }
             });
         });
@@ -90,7 +113,7 @@
 
     {{-- Nút thêm --}}
     <div style="margin-bottom: 15px;">
-        <a href="{{ url('/admin/art_create') }}" class="btn-custom btn-add">
+        <a href="{{ route('admin.artists.create') }}" class="btn-custom btn-add">
             + Thêm nghệ sĩ
         </a>
     </div>
@@ -139,7 +162,7 @@
                         <form method="POST" action="{{ route('admin.artists.delete', $artist->id) }}" 
                               onsubmit="return confirm('Bạn có chắc muốn thao tác không?')">
                             @csrf
-                            <button type="submit" class="btn-custom btn-delete">
+                            <button type="submit" class="btn-custom {{ $artist->status == 1 ? 'btn-delete' : 'btn-restore' }}">
                                 {{ $artist->status == 1 ? 'Xóa' : 'Khôi phục' }}
                             </button>
                         </form>

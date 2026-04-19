@@ -34,6 +34,12 @@
     <div class="alert-ok">{{ session('success') }}</div>
     @endif
 
+    @if ($errors->any())
+        <div class="alert-ok" style="background:#fff2f2; color:#b42318; border:1px solid #ffd0d0;">
+            Vui lòng kiểm tra lại các thông tin bên dưới.
+        </div>
+    @endif
+
     <form action="{{ route('admin.songs.store') }}" method="POST">
         @csrf
 
@@ -46,12 +52,46 @@
         <div class="fg-row">
             <div class="fg">
                 <label>Album</label>
-                <input type="number" name="album_id" value="{{ old('album_id') }}" placeholder="ID album">
+                <select name="album_id">
+                    <option value="">-- Không có album --</option>
+                    @foreach($albums as $album)
+                        <option value="{{ $album->id }}" {{ old('album_id') == $album->id ? 'selected' : '' }}>
+                            {{ $album->title }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('album_id') <span class="err">{{ $message }}</span> @enderror
             </div>
             <div class="fg">
                 <label>Thời lượng (giây)</label>
                 <input type="number" name="duration" value="{{ old('duration') }}" placeholder="0">
             </div>
+        </div>
+
+        <div class="fg">
+            <label>Nghệ sĩ</label>
+            <select name="artists[]" multiple size="5">
+                @foreach($artists as $artist)
+                    <option value="{{ $artist->id }}" {{ in_array($artist->id, old('artists', [])) ? 'selected' : '' }}>
+                        {{ $artist->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('artists') <span class="err">{{ $message }}</span> @enderror
+            @error('artists.*') <span class="err">{{ $message }}</span> @enderror
+            <div style="font-size:11px;color:#666;margin-top:4px;">Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều nghệ sĩ.</div>
+        </div>
+
+        <div class="fg">
+            <label>Tâm trạng (Mood)</label>
+            <select name="mood">
+                <option value="">-- Chưa chọn --</option>
+                <option value="chill" {{ old('mood') == 'chill' ? 'selected' : '' }}>Chill</option>
+                <option value="lam-viec" {{ old('mood') == 'lam-viec' ? 'selected' : '' }}>Làm việc</option>
+                <option value="buon" {{ old('mood') == 'buon' ? 'selected' : '' }}>Buồn</option>
+                <option value="party" {{ old('mood') == 'party' ? 'selected' : '' }}>Party</option>
+            </select>
+            @error('mood') <span class="err">{{ $message }}</span> @enderror
         </div>
 
         <div class="fg">
@@ -78,11 +118,6 @@
                 </select>
             </div>
             
-        </div>
-
-        <div class="fg">
-            <label>Lyrics</label>
-            <textarea name="lyrics" placeholder="Nhập lời bài hát...">{{ old('lyrics') }}</textarea>
         </div>
 
         <div class="fc-footer">
