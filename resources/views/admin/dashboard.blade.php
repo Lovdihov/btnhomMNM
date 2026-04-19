@@ -94,6 +94,13 @@
 
     .stat-label { font-size: 15px; font-weight: 600; text-transform: uppercase; text-align: center; letter-spacing: 1.5px; color: #252424; }
     .stat-val   { font-size: 34px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
+    .stat-subtext {
+        font-size: 12px;
+        color: #7a7a7a;
+        line-height: 1.4;
+        text-align: center;
+        margin-top: -2px;
+    }
     .stat-badge {
         gap: 4px;
         font-size: 11px; font-weight: 600;
@@ -214,9 +221,10 @@
         <div class="qa-wrap">
             <div class="qa-label">Thao tác nhanh</div>
             <div class="qa-btns">
-                <a href="/admin/song_create"  class="qa-btn"><i class="fas fa-music me-1"></i> Thêm nhạc</a>
-                <a href="/admin/art_create"   class="qa-btn"><i class="fas fa-user me-1"></i> Thêm nghệ sĩ</a>
-                <a href="/admin/album_create" class="qa-btn"><i class="fas fa-compact-disc me-1"></i> Thêm album</a>
+                <a href="{{ route('admin.songs.create') }}" class="qa-btn"><i class="fas fa-music me-1"></i> Thêm bài hát</a>
+                <a href="{{ route('admin.artists.create') }}" class="qa-btn"><i class="fas fa-user me-1"></i> Thêm nghệ sĩ</a>
+                <a href="{{ route('admin.albums.create') }}" class="qa-btn"><i class="fas fa-compact-disc me-1"></i> Thêm album</a>
+                <a href="{{ route('admin.users.create') }}" class="qa-btn"><i class="fas fa-user-plus me-1"></i> Thêm người dùng</a>
             </div>
         </div>
     </div>
@@ -227,6 +235,7 @@
             <div class="stat-icon-wrap"><i class="fas fa-music"></i></div>
             <div class="stat-label">Tổng bài hát</div>
             <div class="stat-val">{{ number_format($songCount ?? 0) }}</div>
+            <div class="stat-subtext">({{ number_format($songActiveCount ?? 0) }} đang hiện, {{ number_format($songHiddenCount ?? 0) }} đang ẩn)</div>
             <div class="stat-badge">
                 <i class="fas fa-arrow-up" style="font-size:9px;"></i>
                 +{{ $songThisMonth ?? 0 }} tháng này
@@ -238,6 +247,7 @@
             <div class="stat-icon-wrap"><i class="fas fa-compact-disc"></i></div>
             <div class="stat-label">Album hiện có</div>
             <div class="stat-val">{{ number_format($albumCount ?? 0) }}</div>
+            <div class="stat-subtext">({{ number_format($albumActiveCount ?? 0) }} đang hiện, {{ number_format($albumHiddenCount ?? 0) }} đang ẩn)</div>
             <div class="stat-badge">
                 <i class="fas fa-arrow-up" style="font-size:9px;"></i>
                 +{{ $albumThisMonth ?? 0 }} tháng này
@@ -249,6 +259,7 @@
             <div class="stat-icon-wrap"><i class="fas fa-users"></i></div>
             <div class="stat-label">Nghệ sĩ hợp tác</div>
             <div class="stat-val">{{ number_format($artistCount ?? 0) }}</div>
+            <div class="stat-subtext">({{ number_format($artistActiveCount ?? 0) }} đang hiện, {{ number_format($artistHiddenCount ?? 0) }} đang ẩn)</div>
             <div class="stat-badge">
                 <i class="fas fa-arrow-up" style="font-size:9px;"></i>
                 +{{ $artistThisMonth ?? 0 }} tháng này

@@ -30,10 +30,10 @@ class Song extends Model
     protected $fillable = [
         'title',
         'album_id',
+        'mood',
         'audio_url',
         'cover_url',
         'duration',
-        'lyrics',
         'release_date',
         'status'
     ];

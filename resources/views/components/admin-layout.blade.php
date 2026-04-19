@@ -14,6 +14,7 @@
             <a href="{{ route('admin.songs') }}" class="block p-3 hover:bg-slate-800 rounded">Bài hát</a>
             <a href="{{ route('admin.albums') }}" class="block p-3 hover:bg-slate-800 rounded">Album</a>
             <a href="{{ route('admin.artists') }}" class="block p-3 hover:bg-slate-800 rounded">Nghệ sĩ</a>
+            <a href="{{ route('admin.users') }}" class="block p-3 hover:bg-slate-800 rounded">Người dùng</a>
             <div class="border-t border-slate-700 my-4"></div>
             <a href="{{ route('home') }}" class="block p-3 text-gray-400 hover:text-white">Về trang chủ</a>
         </nav>

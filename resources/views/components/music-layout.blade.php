@@ -87,7 +87,7 @@
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 py-8 pb-28">
+    <main id="ajax-main-content" class="flex-grow container mx-auto px-4 py-8 pb-28">
         {{ $slot }}
     </main>
 
@@ -175,9 +175,14 @@
             }
 
             if (songId && songId !== currentPlayingSongId && csrfToken) {
-                fetch(`/songs/${songId}/history`, {
+                // Sync player with server stats/history via AJAX when a new song starts.
+                fetch(`/songs/${songId}/play`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 }).catch(err => console.error(err));
                 currentPlayingSongId = songId;
             }
@@ -334,6 +339,36 @@
             }).catch(err => console.error(err));
         };
 
+        window.toggleFavoriteArtist = function(artistId, buttonElement) {
+            if (!csrfToken) return alert("Vui lòng đăng nhập!");
+
+            fetch(`/artists/${artistId}/favorite`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+            })
+            .then(res => res.status === 401 ? (window.location.href = '/login') : res.json())
+            .then(data => {
+                const icon = buttonElement.querySelector('i');
+
+                if (data.status === 'added') {
+                    buttonElement.classList.add('text-pink-500');
+                    buttonElement.classList.remove('text-gray-500', 'text-gray-400');
+                    if (icon) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                    }
+                } else {
+                    buttonElement.classList.remove('text-pink-500');
+                    buttonElement.classList.add('text-gray-500');
+                    if (icon) {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+        };
+
         const searchInput = document.getElementById('global-search');
         const searchResults = document.getElementById('search-results');
         const searchContent = document.getElementById('search-content');
@@ -373,6 +408,111 @@
             searchContent.innerHTML = html || `<div class="text-center text-gray-500 py-4">Không tìm thấy "${keyword}"</div>`;
             searchResults.classList.remove('hidden');
         }
+
+        // 7. AJAX PAGE NAVIGATION (keep player alive between pages)
+        const ajaxMainContent = document.getElementById('ajax-main-content');
+        let ajaxRequestController = null;
+
+        function shouldUseAjaxNavigation(link, event) {
+            if (!link || !ajaxMainContent) return false;
+            if (event.defaultPrevented || event.button !== 0) return false;
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+            if (link.target && link.target !== '_self') return false;
+            if (link.hasAttribute('download')) return false;
+            if ((link.getAttribute('href') || '').startsWith('#')) return false;
+            if (link.closest('#search-results')) return false;
+
+            const url = new URL(link.href, window.location.origin);
+            if (url.origin !== window.location.origin) return false;
+
+            // Keep auth/admin flows as full page loads.
+            if (url.pathname.startsWith('/admin') || url.pathname === '/logout') return false;
+
+            return true;
+        }
+
+        function executeInlineScripts(scopeEl) {
+            const scripts = scopeEl.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function updateHeaderActiveState(pathname) {
+            const navLinks = document.querySelectorAll('header nav a[href]');
+            navLinks.forEach(link => {
+                const url = new URL(link.href, window.location.origin);
+                const isActive = url.pathname === pathname;
+                link.classList.toggle('text-white', isActive);
+                link.classList.toggle('font-bold', isActive);
+                if (!isActive) {
+                    link.classList.add('hover:text-white', 'transition');
+                }
+            });
+        }
+
+        async function loadPageWithAjax(url, options = {}) {
+            const { pushState = true, scrollTop = true } = options;
+
+            if (ajaxRequestController) ajaxRequestController.abort();
+            ajaxRequestController = new AbortController();
+
+            ajaxMainContent.classList.add('opacity-70', 'pointer-events-none');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-AJAX-NAV': '1'
+                    },
+                    signal: ajaxRequestController.signal
+                });
+
+                if (!response.ok) throw new Error(`Navigation failed: ${response.status}`);
+
+                const html = await response.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const newMainContent = doc.getElementById('ajax-main-content') || doc.querySelector('main');
+
+                if (!newMainContent) {
+                    window.location.href = url;
+                    return;
+                }
+
+                ajaxMainContent.innerHTML = newMainContent.innerHTML;
+                executeInlineScripts(ajaxMainContent);
+
+                if (doc.title) document.title = doc.title;
+                if (pushState) window.history.pushState({}, '', url);
+                if (scrollTop) window.scrollTo({ top: 0, behavior: 'auto' });
+
+                updateHeaderActiveState(new URL(url, window.location.origin).pathname);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    window.location.href = url;
+                }
+            } finally {
+                ajaxMainContent.classList.remove('opacity-70', 'pointer-events-none');
+            }
+        }
+
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest('a[href]');
+            if (!shouldUseAjaxNavigation(link, event)) return;
+
+            event.preventDefault();
+            loadPageWithAjax(link.href);
+        });
+
+        window.addEventListener('popstate', () => {
+            loadPageWithAjax(window.location.href, { pushState: false, scrollTop: false });
+        });
     </script>
 </body>
 </html>

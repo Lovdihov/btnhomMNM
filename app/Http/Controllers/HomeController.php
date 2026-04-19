@@ -8,6 +8,7 @@ use App\Models\Artist;
 use App\Models\Album;
 use App\Models\Genre;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
@@ -39,10 +40,13 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        $artists = $user->favoriteArtists()->get();
+        $artists = $user->favoriteArtists()
+            ->where('status', 1)
+            ->get();
 
         $songs = $user->favoriteSongs()
-            ->with(['artists'])
+            ->where('status', 1)
+            ->with(['artists', 'album'])
             ->get();
 
         return view('music.favorites', compact('artists', 'songs'));
@@ -52,8 +56,11 @@ class HomeController extends Controller
         $user = Auth::user();
         
         $histories = $user->playHistories()
-                          ->with(['song.artists' => function($q) {
-                              $q->where('status', 1);
+                          ->whereHas('song', function ($query) {
+                              $query->where('status', 1);
+                          })
+                          ->with(['song' => function ($query) {
+                              $query->where('status', 1)->with(['artists', 'album']);
                           }])
                           ->latest()
                           ->take(30)
@@ -87,9 +94,28 @@ class HomeController extends Controller
         return view('music.genres', compact('genre')); 
     }
 
-    public function songs() {
-        $songs = Song::where('status', 1)->with('artists')->get();
-        return view('music.songs', compact('songs'));
+    public function songs(Request $request) {
+        $availableMoods = [
+            'chill' => 'Chill',
+            'lam-viec' => 'Làm việc',
+            'buon' => 'Buồn',
+            'party' => 'Party',
+        ];
+
+        $selectedMood = $request->query('mood');
+        if (!array_key_exists($selectedMood, $availableMoods)) {
+            $selectedMood = null;
+        }
+
+        $songsQuery = Song::where('status', 1)->with(['artists', 'album', 'genres']);
+
+        if ($selectedMood && Schema::hasColumn('songs', 'mood')) {
+            $songsQuery->where('mood', $selectedMood);
+        }
+
+        $songs = $songsQuery->get();
+
+        return view('music.songs', compact('songs', 'selectedMood', 'availableMoods'));
     }
 
     public function genreDetail($id) {

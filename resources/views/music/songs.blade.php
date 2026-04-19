@@ -1,6 +1,27 @@
 <x-music-layout title="Tất cả bài hát - ThreeX Music">
     <div class="mb-10">
-        <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-blue-500 pl-4">Kho Bài Hát</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-blue-500 pl-4">Danh sách Bài Hát</h2>
+
+        <div class="flex flex-wrap gap-3 mb-6">
+            <a href="{{ route('songs') }}"
+               @class([
+                   'px-4 py-2 rounded-full text-sm font-semibold transition',
+                   'bg-purple-500 text-white shadow-lg shadow-purple-500/30' => empty($selectedMood),
+                   'bg-[#1e2038] text-gray-300 hover:text-white border border-gray-700' => !empty($selectedMood),
+               ])>
+                Tất cả
+            </a>
+            @foreach(($availableMoods ?? []) as $moodKey => $moodLabel)
+                <a href="{{ route('songs', ['mood' => $moodKey]) }}"
+                   @class([
+                       'px-4 py-2 rounded-full text-sm font-semibold transition',
+                       'bg-purple-500 text-white shadow-lg shadow-purple-500/30' => ($selectedMood ?? null) === $moodKey,
+                       'bg-[#1e2038] text-gray-300 hover:text-white border border-gray-700' => ($selectedMood ?? null) !== $moodKey,
+                   ])>
+                    {{ $moodLabel }}
+                </a>
+            @endforeach
+        </div>
         
         <div class="bg-[#1e2038] rounded-2xl overflow-hidden shadow-xl">
             <div class="grid grid-cols-12 gap-4 p-4 border-b border-gray-800 text-gray-400 text-sm font-bold uppercase tracking-wider">
@@ -68,7 +89,11 @@
         
         @if($songs->isEmpty())
             <div class="text-center py-20 text-gray-500 italic bg-[#1e2038] rounded-2xl mt-4">
-                Hiện chưa có bài hát nào trong hệ thống.
+                @if(!empty($selectedMood))
+                    Chưa có bài hát phù hợp với tâm trạng đã chọn.
+                @else
+                    Hiện chưa có bài hát nào trong hệ thống.
+                @endif
             </div>
         @endif
     </div>
