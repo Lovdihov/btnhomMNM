@@ -1,6 +1,27 @@
 <x-music-layout title="Tất cả bài hát - ThreeX Music">
     <div class="mb-10">
-        <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-blue-500 pl-4">Kho Bài Hát</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-blue-500 pl-4">Danh sách Bài Hát</h2>
+
+        <div class="flex flex-wrap gap-3 mb-6">
+            <a href="{{ route('songs') }}"
+               @class([
+                   'px-4 py-2 rounded-full text-sm font-semibold transition',
+                   'bg-purple-500 text-white shadow-lg shadow-purple-500/30' => empty($selectedMood),
+                   'bg-[#1e2038] text-gray-300 hover:text-white border border-gray-700' => !empty($selectedMood),
+               ])>
+                Tất cả
+            </a>
+            @foreach(($availableMoods ?? []) as $moodKey => $moodLabel)
+                <a href="{{ route('songs', ['mood' => $moodKey]) }}"
+                   @class([
+                       'px-4 py-2 rounded-full text-sm font-semibold transition',
+                       'bg-purple-500 text-white shadow-lg shadow-purple-500/30' => ($selectedMood ?? null) === $moodKey,
+                       'bg-[#1e2038] text-gray-300 hover:text-white border border-gray-700' => ($selectedMood ?? null) !== $moodKey,
+                   ])>
+                    {{ $moodLabel }}
+                </a>
+            @endforeach
+        </div>
         
         <div class="bg-[#1e2038] rounded-2xl overflow-hidden shadow-xl">
             <div class="grid grid-cols-12 gap-4 p-4 border-b border-gray-800 text-gray-400 text-sm font-bold uppercase tracking-wider">
@@ -13,16 +34,25 @@
 
             <div class="divide-y divide-gray-800">
                 @foreach($songs as $index => $song)
-                    <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition group cursor-pointer">
+                    @php
+                        $isFavorited = Auth::check() && Auth::user()->favoriteSongs->contains($song->id);
+                        $coverUrl = $song->cover_url ?? 'https://via.placeholder.com/50';
+                        $artistNames = addslashes($song->artists->pluck('name')->join(', '));
+                    @endphp
+
+                    {{-- Click vào cả dòng để phát nhạc --}}
+                    <div onclick="playSong('{{ $song->audio_url }}', '{{ addslashes($song->title) }}', '{{ $coverUrl }}', '{{ $artistNames }}', {{ $song->id }})" 
+                         class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition group cursor-pointer">
+                        
                         <div class="col-span-1 text-center text-gray-500 group-hover:hidden">
                             {{ $index + 1 }}
                         </div>
                         <div class="col-span-1 text-center hidden group-hover:block text-purple-500">
-                            ▶
+                            <i class="fas fa-play"></i>
                         </div>
 
                         <div class="col-span-6 md:col-span-5 flex items-center gap-3">
-                            <img src="{{ $song->cover_url }}" class="w-10 h-10 rounded shadow-md">
+                            <img src="{{ $coverUrl }}" class="w-10 h-10 rounded shadow-md">
                             <div class="truncate">
                                 <h4 class="text-white font-medium truncate group-hover:text-purple-400 transition">{{ $song->title }}</h4>
                                 <p class="text-xs text-gray-400 truncate">{{ $song->artists->pluck('name')->join(', ') }}</p>
@@ -38,23 +68,19 @@
                         </div>
 
                         <div class="col-span-5 md:col-span-1 flex justify-end items-center gap-3">
-                            
-                            @php
-                                $isFavorited = Auth::check() && Auth::user()->favoriteSongs->contains($song->id);
-                            @endphp
-                            <button onclick="toggleFavorite({{ $song->id }}, this)" 
+                            {{-- Chặn nổi bọt ở nút thả tim --}}
+                            <button onclick="event.stopPropagation(); toggleFavorite({{ $song->id }}, this)" 
                                 @class([
                                     'transition hover:scale-110',
                                     'text-pink-500' => $isFavorited,
                                     'text-gray-500 hover:text-pink-500' => !$isFavorited
                                 ])>
-                                ♥
+                                <i class="fas fa-heart text-lg"></i>
                             </button>
                             
-                            <button onclick="playSong('{{ $song->audio_url }}', '{{ addslashes($song->title) }}', '{{ $song->cover_url ?? 'https://via.placeholder.com/50' }}', '{{ addslashes($song->artists->pluck('name')->join(', ')) }}', {{ $song->id }})" 
-                                    class="text-gray-400 hover:text-purple-500 transition hover:scale-110">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/></svg>
-                            </button>
+                            <div class="text-gray-400 hover:text-purple-500 transition hover:scale-110">
+                                <i class="fas fa-play-circle text-lg"></i>
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -63,7 +89,11 @@
         
         @if($songs->isEmpty())
             <div class="text-center py-20 text-gray-500 italic bg-[#1e2038] rounded-2xl mt-4">
-                Hiện chưa có bài hát nào trong hệ thống.
+                @if(!empty($selectedMood))
+                    Chưa có bài hát phù hợp với tâm trạng đã chọn.
+                @else
+                    Hiện chưa có bài hát nào trong hệ thống.
+                @endif
             </div>
         @endif
     </div>
@@ -73,7 +103,7 @@
         const csrfTokenFavorites = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
         function toggleFavorite(songId, buttonElement) {
-            if (!csrfTokenFavorites) return alert("Lỗi CSRF");
+            if (!csrfTokenFavorites) return alert("Vui lòng đăng nhập để sử dụng tính năng này!");
 
             fetch(`/songs/${songId}/favorite`, {
                 method: 'POST',
@@ -86,8 +116,10 @@
             .then(data => {
                 if (data.status === 'added') {
                     buttonElement.classList.replace('text-gray-500', 'text-pink-500');
+                    buttonElement.classList.remove('hover:text-pink-500');
                 } else if (data.status === 'removed') {
                     buttonElement.classList.replace('text-pink-500', 'text-gray-500');
+                    buttonElement.classList.add('hover:text-pink-500');
                 }
             });
         }

@@ -44,21 +44,51 @@ Route::post('/songs/{song}/play', [SongController::class, 'incrementPlayCount'])
 Route::post('/songs/{song}/favorite', [SongController::class, 'toggleFavorite']);
 Route::post('/artists/{artist}/favorite', [HomeController::class, 'toggleFavoriteArtist']);
 
+// Trang Quản trị (Admin)
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('/songs', [AdminController::class, 'songs'])->name('songs');
-    Route::get('/albums', [AdminController::class, 'albums'])->name('albums');
-    Route::get('/artists', [AdminController::class, 'artists'])->name('artists');
 
-    Route::post('/artists/delete/{id}', [AdminController::class, 'deleteArtist'])->name('artists.delete');
-    Route::post('/songs/delete/{id}', [AdminController::class, 'deleteSong'])->name('songs.delete');
-    Route::post('/albums/delete/{id}', [AdminController::class, 'deleteAlbum'])->name('albums.delete');
-    Route::get('/song_create', [AdminController::class, 'createSong'])->name('songs.create');
-    Route::post('/song_store', [AdminController::class, 'storeSong'])->name('songs.store');
-    Route::get('/alb_create', [AdminController::class, 'createAlbum'])->name('albums.create');
-    Route::post('/alb_store', [AdminController::class, 'storeAlbum'])->name('albums.store');
-    Route::get('/art_create', [AdminController::class, 'createArtist'])->name('artists.create');
-        Route::post('/art_store', [AdminController::class, 'storeArtist'])->name('artists.store');
+    // 1. DASHBOARD
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+
+    // 2. QUẢN LÝ BÀI HÁT (SONGS)
+    Route::controller(AdminController::class)->group(function () {
+        Route::get('/songs', 'songs')->name('songs');
+        Route::get('/songs/create', 'createSong')->name('songs.create');
+        Route::post('/songs/store', 'storeSong')->name('songs.store');
+        Route::get('/songs/edit/{id}', 'editSong')->name('songs.edit');
+        Route::put('/songs/update/{id}', 'updateSong')->name('songs.update');
+        Route::post('/songs/delete/{id}', 'deleteSong')->name('songs.delete');
+    });
+
+    // 3. QUẢN LÝ ALBUM
+    Route::controller(AdminController::class)->group(function () {
+        Route::get('/albums', 'albums')->name('albums');
+        Route::get('/albums/create', 'createAlbum')->name('albums.create');
+        Route::post('/albums/store', 'storeAlbum')->name('albums.store');
+        Route::get('/albums/edit/{id}', 'editAlbum')->name('albums.edit');
+        Route::put('/albums/update/{id}', 'updateAlbum')->name('albums.update');
+        Route::post('/albums/delete/{id}', 'deleteAlbum')->name('albums.delete');
+    });
+
+    // 4. QUẢN LÝ NGHỆ SĨ (ARTISTS)
+    Route::controller(AdminController::class)->group(function () {
+        Route::get('/artists', 'artists')->name('artists');
+        Route::get('/artists/create', 'createArtist')->name('artists.create');
+        Route::post('/artists/store', 'storeArtist')->name('artists.store');
+        Route::get('/artists/edit/{id}', 'editArtist')->name('artists.edit');
+        Route::put('/artists/update/{id}', 'updateArtist')->name('artists.update');
+        Route::post('/artists/delete/{id}', 'deleteArtist')->name('artists.delete');
+    });
+
+    // 5. QUẢN LÝ NGƯỜI DÙNG (USERS)
+    Route::controller(AdminController::class)->group(function () {
+        Route::get('/users', 'users')->name('users');
+        Route::get('/users/create', 'createUser')->name('users.create');
+        Route::post('/users/store', 'storeUser')->name('users.store');
+        Route::get('/users/edit/{id}', 'editUser')->name('users.edit');
+        Route::put('/users/update/{id}', 'updateUser')->name('users.update');
+        Route::delete('/users/delete/{id}', 'deleteUser')->name('users.delete');
+    });
 });
 
 require __DIR__.'/auth.php';
