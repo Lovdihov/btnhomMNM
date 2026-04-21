@@ -25,7 +25,7 @@
 
                 <div class="relative hidden md:block w-48 lg:w-72 z-50">
                     <div class="relative">
-                        <input type="text" id="global-search" placeholder="Tìm bài hát, nghệ sĩ..." autocomplete="off"
+                        <input type="text" id="global-search" placeholder="Tìm bài hát, nghệ sĩ, album..." autocomplete="off"
                                class="w-full bg-[#1e2038] border border-gray-700 text-white rounded-full py-2 px-4 pl-10 focus:outline-none focus:border-purple-500 transition shadow-lg text-sm">
                         <svg class="w-4 h-4 absolute left-4 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
@@ -403,6 +403,19 @@
                     const t = s.title.replace(/'/g, "\\'");
                     const a = s.artists ? s.artists.map(ar => ar.name).join(', ').replace(/'/g, "\\'") : '';
                     html += `<div onclick="playSong('${s.audio_url}', '${t}', '${s.cover_url}', '${a}', ${s.id})" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${s.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${s.title}</div><div class="text-xs text-gray-400 truncate">${a}</div></div></div>`;
+                });
+            }
+            if (data.artists?.length > 0) {
+                html += `<h4 class="text-xs font-bold text-gray-400 uppercase mb-2 mt-4">Nghệ sĩ</h4>`;
+                data.artists.forEach(ar => {
+                    html += `<a href="/artists/${ar.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${ar.avatar_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-full object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${ar.name}</div></div></a>`;
+                });
+            }
+            if (data.albums?.length > 0) {
+                html += `<h4 class="text-xs font-bold text-gray-400 uppercase mb-2 mt-4">Album</h4>`;
+                data.albums.forEach(al => {
+                    const art = al.artist ? al.artist.name.replace(/'/g, "\\'") : '';
+                    html += `<a href="/albums/${al.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${al.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${al.title}</div><div class="text-xs text-gray-400 truncate">${art}</div></div></a>`;
                 });
             }
             searchContent.innerHTML = html || `<div class="text-center text-gray-500 py-4">Không tìm thấy "${keyword}"</div>`;

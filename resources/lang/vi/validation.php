@@ -6,6 +6,7 @@ return [
 'string' => ':attribute phải có ít nhất là :min ký tự.',
 'array' => 'Mảng :attribute phải có ít nhất :min phần tử.',
 ],
+'confirmed' => ':attribute xác nhận không khớp.',
 'unique' => ':attribute đã được đăng ký.',
 'attributes' => ["password"=>"Mật khẩu"],
 ];
