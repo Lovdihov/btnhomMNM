@@ -408,14 +408,14 @@
             if (data.artists?.length > 0) {
                 html += `<h4 class="text-xs font-bold text-gray-400 uppercase mb-2 mt-4">Nghệ sĩ</h4>`;
                 data.artists.forEach(ar => {
-                    html += `<a href="/artists/${ar.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${ar.avatar_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-full object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${ar.name}</div></div></a>`;
+                    html += `<a href="/nghe-si/${ar.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${ar.avatar_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded-full object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${ar.name}</div></div></a>`;
                 });
             }
             if (data.albums?.length > 0) {
                 html += `<h4 class="text-xs font-bold text-gray-400 uppercase mb-2 mt-4">Album</h4>`;
                 data.albums.forEach(al => {
                     const art = al.artist ? al.artist.name.replace(/'/g, "\\'") : '';
-                    html += `<a href="/albums/${al.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${al.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${al.title}</div><div class="text-xs text-gray-400 truncate">${art}</div></div></a>`;
+                    html += `<a href="/album/${al.id}" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer mb-1 group"><img src="${al.cover_url || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover"><div class="flex-1 overflow-hidden"><div class="text-sm font-bold text-white truncate">${al.title}</div><div class="text-xs text-gray-400 truncate">${art}</div></div></a>`;
                 });
             }
             searchContent.innerHTML = html || `<div class="text-center text-gray-500 py-4">Không tìm thấy "${keyword}"</div>`;

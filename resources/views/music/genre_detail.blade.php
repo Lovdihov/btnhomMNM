@@ -1,11 +1,27 @@
 <x-music-layout title="{{ $genre->name }} - ThreeX Music">
+    @php
+        $allGenres = \App\Models\Genre::where('status', 1)->orderBy('id')->get();
+        $index = $allGenres->search(function ($item) use ($genre) {
+            return $item->id == $genre->id;
+        });
+        $colors = [
+            'from-blue-700 to-blue-900', 
+            'from-green-700 to-green-900', 
+            'from-purple-700 to-purple-900', 
+            'from-red-700 to-red-900',
+            'from-yellow-700 to-yellow-900',
+            'from-pink-700 to-pink-900',
+            'from-indigo-700 to-indigo-900'
+        ];
+        $currentColor = $colors[$index % count($colors)];
+    @endphp
     <div class="container mx-auto px-4 py-8">
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-gray-900 to-black p-8 md:p-12 mb-10 shadow-2xl">
-            <div class="relative z-10">
-                <nav class="flex mb-4 text-sm text-gray-400">
-                    <a href="{{ route('genres') }}" class="hover:text-orange-500 transition">Thể loại</a>
-                    <span class="mx-2">/</span>
-                    <span class="text-white">{{ $genre->name }}</span>
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r {{ $currentColor }} p-8 md:p-12 mb-10 shadow-2xl ">
+            <div class="relative z-10 ">
+                <nav class="flex mb-4 text-sm">
+                    <a href="{{ route('genres') }}" class="text-white/80 hover:text-white transition font-medium">Thể loại</a>
+                    <span class="mx-2 text-white/60">/</span>
+                    <span class="text-white font-semibold">{{ $genre->name }}</span>
                 </nav>
                 <h1 class="text-5xl md:text-7xl font-black text-white mb-4 uppercase tracking-tighter">{{ $genre->name }}</h1>
             </div>
